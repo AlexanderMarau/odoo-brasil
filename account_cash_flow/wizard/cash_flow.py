@@ -16,6 +16,9 @@ class CashFlowWizard(models.TransientModel):
                                 digits=dp.get_precision('Account'))
     print_report = fields.Boolean(string="Imprimir")
     ignore_outstanding = fields.Boolean(string="Ignorar Vencidos?")
+    selected_account_ids = fields.Many2many(
+        'account.account', string="Contas Contábeis",
+        domain= [('user_type_id.type', '=', 'liquidity')])
 
     @api.multi
     def button_calculate(self):
@@ -23,6 +26,7 @@ class CashFlowWizard(models.TransientModel):
             'end_date': self.end_date,
             'start_amount': self.start_amount,
             'ignore_outstanding': self.ignore_outstanding,
+            'selected_account_ids': [(6, False, self.selected_account_ids.ids)]
         })
         cashflow_id.action_calculate_report()
 
@@ -34,6 +38,7 @@ class CashFlowWizard(models.TransientModel):
         dummy, action_id = self.env['ir.model.data'].get_object_reference(
             'account_cash_flow', 'account_cash_flow_report_action')
         vals = self.env['ir.actions.act_window'].browse(action_id).read()[0]
-        vals['domain'] = [('cashflow_id', '=', cashflow_id.id)]
+        vals['domain'] = [
+            ('cashflow_id', '=', cashflow_id.id)]
         vals['context'] = {'search_default_cashflow_id': cashflow_id.id}
         return vals

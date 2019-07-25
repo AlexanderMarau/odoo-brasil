@@ -61,6 +61,9 @@ class CashFlowReport(models.TransientModel):
         "account.cash.flow.line", "cashflow_id",
         string=u"Cash Flow Lines")
 
+    selected_account_ids = fields.Many2many(
+        'account.account', string="Contas Contábeis")
+
     @api.multi
     def draw_chart(self):
         import plotly.graph_objs as go
@@ -68,7 +71,12 @@ class CashFlowReport(models.TransientModel):
         import pandas as pd
 
         diarios = []
-        bancos = self.line_ids.filtered(lambda x: x.liquidity)
+        if self.selected_account_ids:
+            bancos = self.line_ids.filtered(
+                lambda x: x.liquidity and
+                x.id in self.selected_account_ids.ids)
+        else:
+            bancos = self.line_ids.filtered(lambda x: x.liquidity)
         for item in bancos:
             diarios.append((item.amount, item.name))
 
@@ -146,8 +154,13 @@ class CashFlowReport(models.TransientModel):
 
     @api.multi
     def calculate_liquidity(self):
-        accs = self.env['account.account'].search(
-            [('user_type_id.type', '=', 'liquidity')])
+        if self.selected_account_ids:
+            accs = self.env['account.account'].search(
+                [('id', 'in', self.selected_account_ids.ids)]
+            )
+        else:
+            accs = self.env['account.account'].search(
+                [('user_type_id.type', '=', 'liquidity')])
         liquidity_lines = []
         for acc in accs:
             self.env.cr.execute(
