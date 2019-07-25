@@ -18,7 +18,7 @@ class CashFlowWizard(models.TransientModel):
     ignore_outstanding = fields.Boolean(string="Ignorar Vencidos?")
     selected_account_ids = fields.Many2many(
         'account.account', string="Contas Contábeis",
-        domain= [('user_type_id.type', '=', 'liquidity')])
+        domain=[('user_type_id.type', '=', 'liquidity')])
 
     @api.multi
     def button_calculate(self):
